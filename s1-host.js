@@ -176,17 +176,19 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'q' || e.key === 'Q') box.style.display = box.style.display === 'none' ? 'block' : 'none'; });
     renderQR();
 
-    var ov = document.createElement('div'); ov.id = 's1start';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(5,8,18,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;cursor:pointer;color:#fff;font:700 28px Arial';
-    ov.innerHTML = '\u25B6 Click anywhere (or press any key) to start the TV<div style="font:400 16px Arial;color:#b8c2dd">then scan the QR code in the corner with your phone</div>';
-    document.body.appendChild(ov);
+    /* no blocking "click to start" screen any more: the TV starts by itself (muted if the browser demands it).
+       The first real click / key / touch on the TV page (if it ever happens) goes fullscreen and un-mutes. */
+    var hint = document.createElement('div'); hint.id = 's1hint';
+    hint.style.cssText = 'position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;background:#000b;color:#fff;font:600 14px Arial;padding:8px 16px;border-radius:20px;display:none;pointer-events:none';
+    hint.textContent = '\uD83D\uDD07 Muted by the browser \u2013 click or press any key once on this screen for sound + fullscreen';
+    document.body.appendChild(hint);
+    window.s1ShowHint = function (on) { hint.style.display = on ? 'block' : 'none'; };
     var go = function () {
-      if (!ov.parentNode) return; ov.remove();
+      document.removeEventListener('pointerdown', go, true); document.removeEventListener('keydown', go, true); document.removeEventListener('touchstart', go, true);
       try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); } catch (e) {}
-      var v = document.getElementById('v');
-      if (v && v.style.display !== 'none' && v.currentSrc) v.play().then(function () { document.getElementById('gate').style.display = 'none'; }).catch(function () {});
+      if (typeof window.s1Unmute === 'function') window.s1Unmute();
     };
-    ov.addEventListener('click', go); document.addEventListener('keydown', go);
+    document.addEventListener('pointerdown', go, true); document.addEventListener('keydown', go, true); document.addEventListener('touchstart', go, true);
     startPeer();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
