@@ -1,0 +1,152 @@
+[
+ {
+  "name": "Asianet HD",
+  "url": "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/AsianetHD.m3u8",
+  "quality": "720p"
+ },
+ {
+  "name": "Asianet News",
+  "url": "https://amg13737-amg13737c1-amgplt0016.playout.now3.amagi.tv/playlist/amg13737-amg13737c1-amgplt0016/playlist.m3u8",
+  "quality": "1080p"
+ },
+ {
+  "name": "Asianet Movies HD",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=459",
+  "quality": "720p"
+ },
+ {
+  "name": "Asianet Suvarna News",
+  "url": "https://asianetnews.vgcdn.net/vglive-sk-335835/playlist.m3u8",
+  "quality": "1080p"
+ },
+ {
+  "name": "Manorama News",
+  "url": "https://mmtvnews1.akamaized.net/v1/master/673630b269b766886555eebfddd4f27f3de3ab50/mmtvNewsCampaign1/index.m3u8",
+  "quality": "1080p"
+ },
+ {
+  "name": "Media One",
+  "url": "https://cdn.pishow.tv/ott/live/1481/master.m3u8",
+  "quality": "720p"
+ },
+ {
+  "name": "Reporter TV",
+  "url": "https://segment.yuppcdn.net/050522/reporter/playlist.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Kairali We",
+  "url": "https://streams.tangotv.in/WETV/ORIGIN/index.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Kairali News",
+  "url": "https://cdn.pishow.tv/ott/live/1469/master.m3u8",
+  "quality": "720p"
+ },
+ {
+  "name": "Kairali Arabia",
+  "url": "https://mumt03.tangotv.in/Dsly5z3HKAIRALIARABIA/index.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Amrita TV",
+  "url": "https://ddash74r36xqp.cloudfront.net/master.m3u8",
+  "quality": "720p"
+ },
+ {
+  "name": "Kaumudy TV",
+  "url": "https://oqgdrkxby4rm-hls-live.5centscdn.com/kaumudytv/live.stream/playlist.m3u8",
+  "quality": "720p"
+ },
+ {
+  "name": "News18 Kerala",
+  "url": "https://n18syndication.akamaized.net/bpk-tv/News18_Kerala_NW18_MOB/output01/master.m3u8",
+  "quality": "1080p"
+ },
+ {
+  "name": "Kerala Vision",
+  "url": "https://mumt03.tangotv.in/Dsly5z3HKERALAVISION/index.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Kappa TV",
+  "url": "https://mumt03.tangotv.in/Dsly5z3HKAPPATV/index.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Flowers TV USA",
+  "url": "https://yuppmedtaorire.akamaized.net/v1/master/a0d007312bfd99c47f76b77ae26b1ccdaae76cb1/flowers_nim_https/050522/flowers/playlist.m3u8",
+  "quality": ""
+ },
+ {
+  "name": "DD Malayalam",
+  "url": "https://d2lk5u59tns74c.cloudfront.net/out/v1/c313674ffced4c9a90f1bba436df2b9b/index.m3u8",
+  "quality": "504p"
+ },
+ {
+  "name": "Raj Musix Malayalam",
+  "url": "https://cdn.pishow.tv/ott/live/1073/master.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Kite Victers",
+  "url": "https://932y4x26ljv8-hls-live.5centscdn.com/victers/tv.stream/playlist.m3u8",
+  "quality": "720p"
+ },
+ {
+  "name": "Safari TV",
+  "url": "https://mumt04.tangotv.in/m18aqlK4SAFARITV/index.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Sun Surya HD",
+  "url": "https://d3dt6rg724ecr3.cloudfront.net/SuryaTv/SuryaTV-HDR10-IN-index.m3u8",
+  "quality": "1080p"
+ },
+ {
+  "name": "Jaihind TV",
+  "url": "https://mumt03.tangotv.in/Dsly5z3HJAIHIND/index.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "Jeevan TV",
+  "url": "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/JeevanTV.m3u8",
+  "quality": "576p"
+ },
+ {
+  "name": "National Geographic",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=1335",
+  "quality": "1080p"
+ },
+ {
+  "name": "National Geographic Wild",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=1332",
+  "quality": "HD 1080p"
+ },
+ {
+  "name": "B4UMOVIES",
+  "url": "https://streams.tangotv.in/B4UMOVIES/ORIGIN/index.m3u8",
+  "quality": "576"
+ },
+ {
+  "name": "DDNational",
+  "url": "https://mumbai-edge.smartplaytv.in/DDNational/index.m3u8",
+  "quality": "1080"
+ },
+ {
+  "name": "DD News HD",
+  "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/0811cd8c37ca4c409d5385a6cd2fa18b/index.m3u8",
+  "quality": "1080"
+ },
+ {
+  "name": "Disney Channel HD East",
+  "url": "http://4.30.180.36:8420/disneychannel/index.m3u8?token=test",
+  "quality": "720"
+ },
+ {
+  "name": "Discovery HD Malayalam",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=3431",
+  "quality": "1080p"
+ }
+]

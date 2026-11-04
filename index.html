@@ -1,0 +1,130 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>S1 TV</title><script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script><script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script><script src="qrcode.js"></script><script src="s1-host.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#000;color:white;overflow:hidden;font:16px Arial}video,#externalPlayer{width:100vw;height:100vh;object-fit:contain;background:#000;display:block;border:0}#externalPlayer{position:fixed;inset:0}#label{position:fixed;top:12px;left:12px;background:#0009;padding:8px 12px;border-radius:8px;opacity:0;transition:.3s}body:hover #label{opacity:1}#gate{position:fixed;inset:0;background:#050812;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px}button{padding:14px 22px;border:0;border-radius:9px;background:#1769ff;color:#fff;font-weight:bold;cursor:pointer;font-size:16px}#osd{position:fixed;top:28px;right:34px;z-index:5;background:#000b;color:#6dffb0;font:700 34px Consolas,monospace;padding:10px 18px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none}#recbadge{position:fixed;left:16px;bottom:16px;z-index:2147483646;display:none;align-items:center;gap:10px;background:#000c;color:#fff;font:700 22px Consolas,monospace;padding:10px 16px;border-radius:12px;max-width:70vw;pointer-events:none}#recbadge i{width:16px;height:16px;border-radius:50%;background:#e53935;box-shadow:0 0 10px #e53935;animation:recblink 1s infinite}#recbadge small{font:14px Arial,sans-serif;color:#cfd6e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@keyframes recblink{50%{opacity:.2}}#recsaved{position:fixed;left:16px;bottom:16px;z-index:2147483646;display:none;background:#0b2a17f0;border:1px solid #2ecc71;color:#fff;font:16px Arial,sans-serif;padding:12px 18px;border-radius:12px;max-width:70vw;word-break:break-all;pointer-events:none}#recsaved b{color:#6dffb0;display:block;margin-bottom:4px}#qrcorner{position:fixed;right:14px;bottom:14px;z-index:2147483647;background:#fff;color:#111;padding:8px;border-radius:12px;text-align:center;font:12px Arial,sans-serif;box-shadow:0 2px 14px #0008;cursor:pointer}#qrcorner svg{display:block;margin:0 auto 4px}</style></head><body>
+<video id="v" autoplay playsinline></video><iframe id="externalPlayer" title="External channel player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" referrerpolicy="no-referrer-when-downgrade" style="display:none"></iframe><div id="osd"></div><div id="recbadge"><i></i><span id="rectime">REC</span><small id="recname"></small></div><div id="recsaved"><b>\u25A0 Recording saved</b><span id="recpath"></span></div><div id="label">Loading default channel…</div><div id="gate"><h2 id="title">S1</h2><div id="msg">Waiting for a channel…</div></div>
+<script>
+const v=document.getElementById('v'),externalPlayer=document.getElementById('externalPlayer'),label=document.getElementById('label'),gate=document.getElementById('gate'),title=document.getElementById('title'),msg=document.getElementById('msg');let hls=null,lastId=0,loadedUrl='',playingRec=false;
+let ytOn=false,lastNotice=0;
+function applyYT(d){const on=!!d.yt;if(on===ytOn)return;ytOn=on;
+ if(on){if(playingRec){v.pause()}else{stopVideo();externalPlayer.src='about:blank';externalPlayer.style.display='none';loadedUrl=''}}
+ else{if(playingRec){v.play().catch(()=>{})}else if(d.url){playChannel(d.name,d.url)}}}
+function showGate(text){msg.textContent=text;gate.style.display='flex'}
+function stopVideo(){if(hls){hls.destroy();hls=null}v.pause();v.removeAttribute('src');v.load()}
+let activated=false;
+['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>{activated=true},true));
+function activate(){return new Promise(res=>{if(activated)return res(true);
+ fetch('/api/click',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json()).then(d=>{if(d&&d.ok)activated=true;setTimeout(()=>res(!!(d&&d.ok)),400)}).catch(()=>res(false))})}
+function failChannel(text){stopVideo();loadedUrl='';showGate(text)}
+function playChannel(name,url){
+ if(ytOn||playingRec||!url||url===loadedUrl)return;
+ loadedUrl=url;label.textContent=name||'Now Playing';title.textContent=name||'Now Playing';
+ // Web player pages (e.g. pind.html?id=...) are shown in an iframe.
+ // Direct HLS URLs are played by the built-in video/HLS.js player.
+ const isWebPlayer=/\.html?(?:[?#]|$)/i.test(url) && !/\.m3u8(?:[?#]|$)/i.test(url);
+ if(isWebPlayer){
+   // Browsers only let an embedded player autoplay if the page itself has had a real click/keypress first
+   // (that is why it works when you click a channel in the other project). The TV page is driven from a phone,
+   // so we give it that click ourselves BEFORE the player loads.
+   stopVideo();v.style.display='none';externalPlayer.style.display='none';externalPlayer.src='about:blank';
+   showGate('Loading '+(name||'player')+'…');
+   activate().then(ok=>{
+     if(loadedUrl!==url)return;
+     externalPlayer.style.display='block';externalPlayer.src=url;gate.style.display='none';
+     // Only if the activation click could not be sent, fall back to clicking the player centre after 4s.
+     if(!ok)setTimeout(()=>{ if(loadedUrl===url) fetch('/api/click',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{}); },4000);
+   });
+   return;
+ }
+ externalPlayer.removeAttribute('src');externalPlayer.style.display='none';v.style.display='block';stopVideo();
+ if(window.Hls&&Hls.isSupported()){
+   // Fast start: begin at the LOWEST quality (small first segment = quick picture), then hls.js
+   // measures real download speed and steps up to the best quality it can sustain.
+   hls=new Hls({startLevel:0,startFragPrefetch:true,abrBandWidthUpFactor:0.85,abrEwmaDefaultEstimate:1500000,maxBufferLength:20,backBufferLength:10,manifestLoadingMaxRetry:4,levelLoadingMaxRetry:4,fragLoadingMaxRetry:6});
+   hls.on(Hls.Events.FRAG_BUFFERED,function once(){ // after the 2nd segment, make sure auto-quality is on so it climbs
+     if((once.n=(once.n||0)+1)===2){hls.nextLevel=-1;hls.off(Hls.Events.FRAG_BUFFERED,once)}
+   });
+   hls.on(Hls.Events.ERROR,function(_e,d){
+     if(!d.fatal)return;
+     if(d.type===Hls.ErrorTypes.MEDIA_ERROR&&!hls._tried){hls._tried=1;hls.recoverMediaError();return}
+     const c=d.response&&d.response.code;
+     failChannel((c===401||c===403||c===451)?'This channel is blocked in your region (HTTP '+c+'). Pick another channel.':'This channel could not be loaded. Pick another channel.');
+   });
+   hls.loadSource(url);hls.attachMedia(v);
+   hls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().then(()=>gate.style.display='none').catch(()=>showGate('Autoplay was blocked. Press Play on the video.')));
+ }else if(v.canPlayType('application/vnd.apple.mpegurl')){
+   v.src=url;v.play().then(()=>gate.style.display='none').catch(()=>showGate('Autoplay was blocked. Press Play on the video.'));
+ }else showGate('This browser does not support this stream format.');
+}
+async function loadDefault(){try{let r=await fetch('/api/default?ts='+Date.now(),{cache:'no-store'}),d=await r.json();if(d.url)playChannel(d.name,d.url);else msg.textContent='Scan the QR code with your phone to pick a channel.'}catch(e){msg.textContent='Loading…'}}
+let lastVol=null,lastMute=null,osdT=0;
+function osd(t){let o=document.getElementById('osd');o.textContent=t;o.style.opacity=1;clearTimeout(osdT);osdT=setTimeout(()=>o.style.opacity=0,1600)}
+function applyAudio(d){if(typeof d.volume!=='number')return;v.volume=Math.max(0,Math.min(1,d.volume/100));v.muted=!!d.muted;
+if(lastVol!==null&&(d.volume!==lastVol||!!d.muted!==lastMute))osd(d.muted?'\uD83D\uDD07 Muted':'\uD83D\uDD0A '+d.volume);lastVol=d.volume;lastMute=!!d.muted}
+function applyRec(d){let b=document.getElementById('recbadge'),s=document.getElementById('recsaved'),p=n=>String(n).padStart(2,'0');
+if(d.rec_on){let t=d.rec_secs||0;document.getElementById('rectime').textContent='REC '+(t>=3600?Math.floor(t/3600)+':':'')+p(Math.floor(t%3600/60))+':'+p(t%60);document.getElementById('recname').textContent=d.rec_name||'';b.style.display='flex';s.style.display='none'}
+else{b.style.display='none';if(d.rec_saved){document.getElementById('recpath').textContent=d.rec_saved;s.style.display='block'}else s.style.display='none'}}
+
+/* ---- recordings list on the TV (opened with the RECORDS button on the phone; joystick up/down, OK = play, left = close) ---- */
+(function(){
+ const st=document.createElement('style');
+ st.textContent='#bw{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:40;display:none;flex-direction:column;padding:5vh 8vw;color:#fff;font-family:Arial,sans-serif}#bw h1{margin:0 0 3vh;font-size:5vh;letter-spacing:.12em;color:#9fe8c0}#bwl{flex:1;display:flex;flex-direction:column;gap:1.2vh;min-height:0;overflow:hidden}.bwr{display:flex;justify-content:space-between;align-items:center;padding:1.8vh 2.5vw;border-radius:2vh;background:#161b26;font-size:4.2vh;border:.5vh solid transparent}.bwr.sel{background:#16803c;border-color:#fff;transform:scale(1.02)}.bwr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bwr small{font-size:2.8vh;opacity:.8;margin-left:2vw;white-space:nowrap}#bwh{margin-top:3vh;font-size:3vh;color:#9aa6c4;text-align:center}';
+ document.head.appendChild(st);
+ const bw=document.createElement('div');bw.id='bw';bw.innerHTML='<h1>RECORDINGS</h1><div id="bwl"></div><div id="bwh">&#9650; &#9660; choose &nbsp;&middot;&nbsp; OK play &nbsp;&middot;&nbsp; &#9664; close</div>';
+ document.body.appendChild(bw);const bl=bw.querySelector('#bwl');let key='';
+ window.applyBrowse=function(d){
+  const show=!!d.browse&&!playingRec&&!ytOn;
+  if(!show){if(bw.style.display!=='none'){bw.style.display='none'}key='';return}
+  bw.style.display='flex';
+  const list=d.browse_list||[],sel=d.browse_sel||0,k=JSON.stringify([list.length,sel,list[0]]);
+  if(k===key)return;key=k;bl.innerHTML='';
+  if(!list.length){bl.innerHTML='<div class="bwr"><span>No recordings yet</span></div>';return}
+  const per=7,start=Math.max(0,Math.min(sel-3,list.length-per));
+  list.slice(start,start+per).forEach((r,i)=>{const row=document.createElement('div');row.className='bwr'+(start+i===sel?' sel':'');
+   const a=document.createElement('span');a.textContent=r[0];const b=document.createElement('small');b.textContent=r[1];row.append(a,b);bl.appendChild(row)});
+ };
+})();
+async function poll(){try{let r=await fetch('/api/current?tv=1&ts='+Date.now(),{cache:'no-store'}),d=await r.json();applyAudio(d);applyRec(d);applyPlay(d);applyYT(d);applyBrowse(d);if(d.notice_id&&d.notice_id!==lastNotice){lastNotice=d.notice_id;if(d.notice)osd(d.notice)}if(!ytOn&&!playingRec&&d.id&&d.id!==lastId&&d.url){lastId=d.id;playChannel(d.name,d.url);if(d.index)osd('CH '+String(d.index).padStart(2,'0')+'  '+d.name)}}catch(e){}}
+
+
+/* ---------- Recording playback (started from the phone remote: RECORDS) ---------- */
+let recFile='',lastPlayId=0,lastSeek=0,lastToggle=0,rpT=0;
+(function(){const st=document.createElement('style');
+st.textContent='#rpbar{position:fixed;left:0;right:0;bottom:0;padding:26px 200px 24px 32px;background:linear-gradient(transparent,#000d);display:none;z-index:30;color:#fff;font:600 20px Arial}#rpname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#rptrack{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden;margin:12px 0 8px}#rpfill{display:block;height:100%;width:0;background:#6dffb0}#rptime{font:16px Consolas,monospace;color:#cfe}';
+document.head.appendChild(st)})();
+const rpbar=document.createElement('div');rpbar.id='rpbar';rpbar.innerHTML='<div id="rpname"></div><div id="rptrack"><i id="rpfill"></i></div><div id="rptime"></div>';document.body.appendChild(rpbar);
+function fmtT(t){if(!isFinite(t)||t<0)return'--:--';t=Math.floor(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60,p=n=>String(n).padStart(2,'0');return(h?h+':':'')+p(m)+':'+p(s)}
+function rpShow(sticky){rpbar.style.display='block';clearTimeout(rpT);if(!sticky)rpT=setTimeout(()=>{if(!v.paused)rpbar.style.display='none'},3500)}
+function rpDraw(){if(!playingRec)return;const d=v.duration;document.getElementById('rpfill').style.width=(isFinite(d)&&d>0?Math.min(100,v.currentTime/d*100):0)+'%';document.getElementById('rptime').textContent=fmtT(v.currentTime)+' / '+fmtT(d)}
+v.addEventListener('timeupdate',rpDraw);
+v.addEventListener('pause',()=>{if(playingRec)rpShow(true)});
+v.addEventListener('play',()=>{if(playingRec)rpShow(false)});
+v.addEventListener('ended',()=>{if(playingRec){osd('Finished');rpShow(true)}});
+v.addEventListener('error',()=>{if(playingRec)osd('Cannot play this file in the browser')});
+function niceRecName(f){return f.replace(/\.[^.]+$/,'').replace(/_(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-\d{2}$/,' \u00B7 $3-$2-$1 $4:$5')}
+function startRec(d){
+ playingRec=true;recFile=d.play_file;lastSeek=d.play_seek||0;lastToggle=d.play_toggle||0;
+ loadedUrl='rec:'+recFile;stopVideo();externalPlayer.style.display='none';externalPlayer.src='about:blank';gate.style.display='none';v.style.display='block';
+ label.textContent=niceRecName(recFile);document.getElementById('rpname').textContent=niceRecName(recFile);document.getElementById('rpfill').style.width='0';document.getElementById('rptime').textContent='';
+ const f=recFile;
+ activate().then(()=>{if(!playingRec||recFile!==f)return;
+   v.src='/api/rec/file?name='+encodeURIComponent(f);
+   v.play().catch(()=>osd('Press play on the remote'));
+   rpShow(false);osd('\u25B6 '+niceRecName(f))});
+}
+function exitRec(d){playingRec=false;recFile='';clearTimeout(rpT);rpbar.style.display='none';stopVideo();loadedUrl='';lastId=d.id||lastId;if(d.url)playChannel(d.name,d.url)}
+function applyPlay(d){
+ const f=d.play_file||'';
+ if(f&&(!playingRec||d.play_id!==lastPlayId)){lastPlayId=d.play_id;startRec(d);return}
+ if(!f&&playingRec){lastPlayId=d.play_id;exitRec(d);return}
+ lastPlayId=d.play_id;
+ if(!playingRec)return;
+ const ds=(d.play_seek||0)-lastSeek;
+ if(ds){lastSeek=d.play_seek;const hi=isFinite(v.duration)?Math.max(0,v.duration-0.5):1e9;v.currentTime=Math.max(0,Math.min(hi,v.currentTime+ds));
+   osd((ds>0?'\u23E9 +':'\u23EA \u2212')+Math.abs(Math.round(ds))+'s');rpShow(false);rpDraw()}
+ const dt=(d.play_toggle||0)-lastToggle;
+ if(dt){lastToggle=d.play_toggle;if(dt%2){if(v.paused||v.ended){v.play().catch(()=>{});osd('\u25B6 Play')}else{v.pause();osd('\u23F8 Pause')}}}
+}
+
+loadDefault();poll();setInterval(poll,150);
+// Try fullscreen on launch; browsers commonly require a user gesture, so the button remains as fallback.
+
+</script></body></html>

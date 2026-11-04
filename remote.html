@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>S1 Remote</title><script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script><script src="s1-remote.js"></script>
+<style>
+:root{--btn:#272d3f;--btn2:#38415b;--txt:#e8edf8;--mut:#8591ad;--lcd:#6dffb0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+body{margin:0;min-height:100vh;background:#0a0d14;color:var(--txt);font:15px system-ui,"Segoe UI",Arial,sans-serif;display:flex;justify-content:center;padding:18px 12px 40px}
+.wrap{width:100%;max-width:340px}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
+.remote{background:linear-gradient(180deg,#1e2331,#141822);border:2px solid #2c3448;border-radius:46px 46px 62px 62px;padding:22px 22px 30px;box-shadow:0 18px 50px #000a,inset 0 1px 0 #ffffff14}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;color:var(--mut);font-weight:700;letter-spacing:.14em;font-size:12px}
+.led{width:10px;height:10px;border-radius:50%;background:#c62828;box-shadow:0 0 8px #c62828}
+.led.on{background:#2ecc71;box-shadow:0 0 8px #2ecc71}
+.lcd{background:#0c1a14;border:1px solid #22382c;border-radius:14px;padding:12px 14px 14px;font-family:Consolas,"Courier New",monospace;color:var(--lcd);box-shadow:inset 0 2px 10px #000a}
+.lcd .row{display:flex;justify-content:space-between;align-items:baseline}
+#ch{font-size:30px;font-weight:700}
+#mute{color:#ff6b6b;font-size:13px;font-weight:700;visibility:hidden}
+#mute.on{visibility:visible}
+#name{font:600 14px system-ui,"Segoe UI",Arial,sans-serif;color:#9fe8c0;margin:2px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:20px}
+.vol{display:flex;align-items:center;gap:8px;font-size:11px}
+.bar{flex:1;height:9px;background:#17332a;border-radius:5px;overflow:hidden}
+#fill{height:100%;width:0;background:var(--lcd);transition:width .15s}
+.bar.m #fill{background:#556b60}
+.sys{display:flex;justify-content:space-between;margin-top:16px}
+.sysbtn{height:40px;padding:0 14px;border-radius:20px;background:var(--btn);border:1px solid #3a4360;font-size:12px;font-weight:800;letter-spacing:.08em;box-shadow:0 3px 0 #11141d}
+.sysbtn:active{background:var(--btn2);transform:translateY(2px);box-shadow:0 1px 0 #11141d}
+.pwr{background:#5a1d1d;border-color:#8c2f2f;color:#ffb3b3}
+.pwr.armed{background:#c62828;color:#fff;border-color:#ff6b6b}
+.recbtn{background:#2b2236;border-color:#5b4a78;color:#e3c9ff;min-width:92px}
+.recbtn.on{background:#c62828;border-color:#ff6b6b;color:#fff;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.7}}
+.tvbtn.on{background:#17314a;border-color:#2f6fa6;color:#bfe0ff}
+.mid{display:grid;grid-template-columns:64px 1fr 64px;align-items:center;justify-items:center;margin:22px 0 20px}
+.rock{display:grid;grid-template-rows:1fr 22px 1fr;width:64px;height:132px;border-radius:32px;background:var(--btn);border:1px solid #3a4360;overflow:hidden}
+.rock button{background:none;font-size:26px;font-weight:700}
+.rock button:active,.rock button.hold{background:var(--btn2)}
+.rock span{text-align:center;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--mut);line-height:22px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 0;justify-items:center}
+.k{width:62px;height:62px;border-radius:50%;background:var(--btn);border:1px solid #3a4360;font-size:21px;font-weight:700;box-shadow:0 3px 0 #11141d}
+.k:active{background:var(--btn2);transform:translateY(2px);box-shadow:0 1px 0 #11141d}
+.k.ok{background:#16803c;font-size:15px}
+.k.list{font-size:12px;color:var(--mut)}
+.guide{margin-top:18px;background:#121623;border:1px solid #2c3448;border-radius:20px;padding:8px}
+.guide h2{margin:6px 10px 8px;font-size:12px;letter-spacing:.14em;color:var(--mut)}
+.row2{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:12px;background:none;text-align:left;font-size:15px}
+.row2:active{background:var(--btn2)}
+.row2 b{width:28px;color:var(--mut);font-family:Consolas,monospace}
+.row2 span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row2 i{font-style:normal;font-size:11px;color:var(--mut)}
+.crow{display:flex;align-items:center}
+.crow .row2{flex:1;width:auto;min-width:0}
+.star{width:44px;height:44px;flex:none;background:none;font-size:24px;color:#5b6783;border-radius:12px}
+.star.on{color:#ffd24a}
+.star:active{background:var(--btn2)}
+.row2.active{background:#17314a;outline:1px solid #2f6fa6}
+.row2.active b{color:var(--lcd)}
+
+/* ---- tools row (below keypad) + expanding mouse / keyboard panels ---- */
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.tool{height:56px;border-radius:18px;background:var(--btn);border:1px solid #3a4360;font-size:10px;font-weight:800;letter-spacing:.08em;box-shadow:0 3px 0 #11141d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0}
+.tool svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tool:active{background:var(--btn2);transform:translateY(2px);box-shadow:0 1px 0 #11141d}
+.tool.on{background:#17314a;border-color:#2f6fa6;color:#bfe0ff}
+.tool:disabled{opacity:.4;cursor:default;transform:none;box-shadow:0 3px 0 #11141d}
+.panel{overflow:hidden;max-height:0;opacity:0;visibility:hidden;margin:0 -10px;transition:max-height .32s ease,opacity .22s ease,margin-top .32s ease,visibility 0s .32s}
+.panel.open{max-height:460px;opacity:1;visibility:visible;margin-top:14px;transition:max-height .32s ease,opacity .22s ease,margin-top .32s ease,visibility 0s}
+.tprow{display:flex;gap:8px}
+.tp{flex:1;height:200px;border-radius:18px;background:#0f131d;border:1px solid #2c3448;box-shadow:inset 0 2px 12px #000a;touch-action:none;display:flex;align-items:center;justify-content:center;color:#34405a;font-size:11px;font-weight:800;letter-spacing:.16em;text-align:center;line-height:1.7}
+.tp.active{border-color:#2f6fa6}
+.scr{width:42px;height:200px;border-radius:18px;background:#0f131d;border:1px solid #2c3448;box-shadow:inset 0 2px 12px #000a;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 0;color:#34405a;font-size:12px}
+.scr.active{border-color:#2f6fa6}
+.scr span{writing-mode:vertical-rl;font-size:9px;font-weight:800;letter-spacing:.2em}
+.mbtns{display:grid;grid-template-columns:1fr .7fr 1fr;gap:8px;margin-top:10px}
+.mb{height:54px;border-radius:14px;background:var(--btn);border:1px solid #3a4360;font-size:12px;font-weight:800;letter-spacing:.08em;box-shadow:0 3px 0 #11141d;touch-action:none}
+.mb.down{background:var(--btn2);transform:translateY(2px);box-shadow:0 1px 0 #11141d}
+#nat{width:100%;height:42px;border-radius:12px;border:1px solid #2c3448;background:#0f131d;color:var(--txt);padding:0 14px;font:15px system-ui,"Segoe UI",Arial,sans-serif;display:block;-webkit-user-select:text;user-select:text;outline:none}
+#nat:focus{border-color:#2f6fa6}
+.natw{position:relative;margin-bottom:8px}
+.nathint{position:absolute;left:15px;top:0;height:42px;line-height:42px;font-size:13px;color:#4b5671;pointer-events:none}
+#nat:focus+.nathint{display:none}
+.kb{display:flex;flex-direction:column;gap:6px}
+.kr{display:flex;gap:4px}
+.kk{flex:1;min-width:0;height:42px;border-radius:9px;background:var(--btn);border:1px solid #3a4360;font-size:16px;font-weight:600;box-shadow:0 2px 0 #11141d;padding:0}
+.kk:active{background:var(--btn2);transform:translateY(1px);box-shadow:0 1px 0 #11141d}
+.kk.w{flex:1.5;font-size:13px}
+.kk.sp{flex:4}
+.kk.en{flex:2.1;background:#16803c;font-size:12px}
+.kk.fn{font-size:12px;color:var(--mut)}
+.kk.on{background:#17314a;border-color:#2f6fa6;color:#bfe0ff}
+
+.mutebtn{height:24px;padding:0 10px;border-radius:12px;background:#e0702b;color:#fff;font:800 10px system-ui,"Segoe UI",Arial,sans-serif;letter-spacing:.08em;box-shadow:0 2px 0 #8f4410}
+.mutebtn:active{transform:translateY(2px);box-shadow:none}
+.mutebtn.on{background:#c62828;box-shadow:0 2px 0 #701515}
+.joy{position:relative;width:116px;height:116px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#2c3349,#171c29);border:1px solid #3a4360;box-shadow:inset 0 3px 12px #000a,0 3px 0 #11141d;touch-action:none}
+.joy .ja{position:absolute;font-style:normal;font-size:11px;color:#56627e}
+.joy .u{top:7px;left:50%;transform:translateX(-50%)}.joy .d{bottom:7px;left:50%;transform:translateX(-50%)}
+.joy .l{left:9px;top:50%;transform:translateY(-50%)}.joy .r{right:9px;top:50%;transform:translateY(-50%)}
+.knob{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#58648a,#343c58);border:1px solid #6b7aa6;box-shadow:0 4px 8px #000a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#c5d0ee;pointer-events:none;transition:transform .12s ease}
+.knob.drag{transition:none;background:radial-gradient(circle at 40% 35%,#6a79a8,#3d4768)}
+/* recordings panel */
+#recpanel.open{max-height:720px}
+.rhead{display:flex;justify-content:space-between;align-items:center;margin:0 4px 8px;font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--mut)}
+.rhead div{display:flex;white-space:nowrap}
+.rhead button{height:30px;padding:0 12px;border-radius:15px;background:var(--btn);border:1px solid #3a4360;font-size:10px;font-weight:800;letter-spacing:.06em;margin-left:6px}
+.rnow{background:#0c1a14;border:1px solid #22382c;border-radius:12px;padding:9px 12px;color:#9fe8c0;font:600 13px system-ui,"Segoe UI",Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}
+.rctl{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px}
+.rctl.five{grid-template-columns:repeat(5,1fr)}
+.rctl button{height:44px;border-radius:12px;background:var(--btn);border:1px solid #3a4360;font-size:12px;font-weight:800;box-shadow:0 2px 0 #11141d;padding:0}
+.rctl button:active{background:var(--btn2);transform:translateY(1px)}
+.rctl .stop{background:#5a1d1d;border-color:#8c2f2f;color:#ffb3b3}
+.rctl .pp{background:#16803c}
+.rlist{max-height:300px;overflow-y:auto;border-radius:14px;background:#0f131d;border:1px solid #2c3448;padding:4px}
+.rrow{display:flex;align-items:center;gap:4px;border-radius:10px}
+.rrow.active{background:#17314a;outline:1px solid #2f6fa6}
+.rmain{flex:1;min-width:0;background:none;text-align:left;padding:9px 10px;border-radius:10px}
+.rmain:active{background:var(--btn2)}
+.rmain b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmain small{color:var(--mut);font-size:11px}
+.rph{width:42px;height:42px;flex:none;background:none;border-radius:10px;font-size:18px}
+.rph:active{background:var(--btn2)}
+.rempty{padding:18px 12px;color:var(--mut);font-size:13px;text-align:center;line-height:1.6}
+#pv{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
+#pv.show{display:flex}
+#pv video{flex:1;min-height:0;width:100%;background:#000}
+#pv .pvbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));background:#10131c;font-size:13px;color:var(--mut)}
+#pv .pvbar button{height:36px;padding:0 16px;border-radius:18px;background:var(--btn);border:1px solid #3a4360;font-weight:800;font-size:12px}
+/* web edition: features that need the PC host are not available */
+.sys,.tools,.panel,#joy,#pv{display:none!important}
+.mid{grid-template-columns:1fr 1fr}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="remote">
+    <div class="top"><div class="led" id="led"></div><div>S1 REMOTE</div><div style="width:10px"></div></div>
+
+    <div class="lcd">
+      <div class="row"><div id="ch">CH --</div><div id="mute">MUTE</div></div>
+      <div id="name">Connecting…</div>
+      <div class="vol"><button class="mutebtn" id="mutebtn" data-act="mute">MUTE</button><div class="bar" id="bar"><div id="fill"></div></div><span id="vnum">--</span></div>
+    </div>
+
+    <div class="sys">
+      <button class="sysbtn pwr" id="pwrbtn">&#9211; POWER</button>
+      <button class="sysbtn recbtn" id="recbtn">&#9679; REC</button>
+      <button class="sysbtn tvbtn" id="tvbtn">OPEN TV</button>
+    </div>
+
+    <div class="mid">
+      <div class="rock">
+        <button data-act="vol_up" data-rep="1">+</button><span>VOL</span><button data-act="vol_down" data-rep="1">&minus;</button>
+      </div>
+      <div class="joy" id="joy" title="Joystick: push = arrows, tap = OK">
+        <i class="ja u">&#9650;</i><i class="ja d">&#9660;</i><i class="ja l">&#9664;</i><i class="ja r">&#9654;</i>
+        <div class="knob" id="knob">OK</div>
+      </div>
+      <div class="rock">
+        <button data-act="ch_up">&#9650;</button><span>CH</span><button data-act="ch_down">&#9660;</button>
+      </div>
+    </div>
+
+    <div class="pad" id="pad">
+      <button class="k" data-d="1">1</button><button class="k" data-d="2">2</button><button class="k" data-d="3">3</button>
+      <button class="k" data-d="4">4</button><button class="k" data-d="5">5</button><button class="k" data-d="6">6</button>
+      <button class="k" data-d="7">7</button><button class="k" data-d="8">8</button><button class="k" data-d="9">9</button>
+      <button class="k list" id="listbtn">GUIDE</button><button class="k" data-d="0">0</button><button class="k ok" id="okbtn">OK</button>
+    </div>
+
+    <div class="tools">
+      <button class="tool" id="mousebtn" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="6"/><path d="M12 2.5v7M6 9.5h12"/></svg>MOUSE
+      </button>
+      <button class="tool" id="kbbtn" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>KEYBOARD
+      </button>
+      <button class="tool" id="recsbtn" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></svg>RECORDS
+      </button>
+      <button class="tool" id="ytbtn" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="4.5"/><path d="M10 9l5 3-5 3z"/></svg>YOUTUBE
+      </button>
+      <button class="tool" id="spare1" disabled>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>SOON
+      </button>
+      <button class="tool" id="spare2" disabled>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>SOON
+      </button>
+    </div>
+
+    <div class="panel" id="mousepanel">
+      <div class="tprow">
+        <div class="tp" id="tp">TOUCHPAD<br>drag = move &middot; tap = click</div>
+        <div class="scr" id="scr"><b>&#9650;</b><span>SCROLL</span><b>&#9660;</b></div>
+      </div>
+      <div class="mbtns">
+        <button class="mb" data-mb="left">LEFT</button>
+        <button class="mb" data-mb="middle">MID</button>
+        <button class="mb" data-mb="right">RIGHT</button>
+      </div>
+    </div>
+
+    <div class="panel" id="recpanel">
+      <div class="rhead"><span>RECORDINGS</span><div><button id="rtv">ON TV</button><button id="rfold">FOLDER</button><button id="rref">&#8635;</button></div></div>
+      <div class="rnow" id="rnow">Nothing playing on the PC</div>
+      <div class="rctl">
+        <button id="rb60" title="Back 1 minute">&minus;1m</button>
+        <button id="rb10" title="Back 10 seconds">&minus;10</button>
+        <button id="rpp" class="pp" title="Play / pause">&#9654;/&#10074;&#10074;</button>
+        <button id="rf10" title="Forward 10 seconds">+10</button>
+        <button id="rf60" title="Forward 1 minute">+1m</button>
+        <button id="rstop" class="stop" title="Stop and go back to live TV">&#9632;</button>
+      </div>
+      <div class="rlist" id="rlist"><div class="rempty">Loading&hellip;</div></div>
+    </div>
+
+    <div class="panel" id="ytpanel">
+      <div class="rhead"><span>YOUTUBE</span><div><button id="ytpow">OPEN</button></div></div>
+      <div class="rnow" id="ytstat">YouTube is closed</div>
+      <div class="rctl five">
+        <button id="ytback" title="Back">&#8630; BACK</button>
+        <button id="ytrew" title="Rewind / left">&#9664;&#9664;</button>
+        <button id="ytpp" class="pp" title="Play / pause">&#9654;/&#10074;&#10074;</button>
+        <button id="ytfwd" title="Forward / right">&#9654;&#9654;</button>
+        <button id="ytstop" class="stop" title="Close YouTube">&#9632;</button>
+      </div>
+      <div class="rempty">Use the joystick to move and OK to select.<br>To search, open the KEYBOARD and type.<br>To cast from your phone: YouTube on TV &rarr; Settings &rarr; Link with TV code.</div>
+    </div>
+
+    <div class="panel" id="kbpanel">
+      <div class="natw"><input id="nat" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send"><div class="nathint">Tap here to type with your phone keyboard</div></div>
+      <div class="kb" id="kb"></div>
+    </div>
+  </div>
+
+  <div class="guide" id="guide">
+    <h2>MALAYALAM CHANNELS &nbsp;(&#9733; = start-up channel)</h2>
+    <div id="list"></div>
+  </div>
+</div>
+
+<div id="pv"><div class="pvbar"><span id="pvt"></span><button id="pvx">CLOSE</button></div><video id="pvv" controls playsinline></video></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let recs=[],channels=[],st={index:0,name:"",volume:70,muted:false},buf="",bufT=0,online=false,flashT=0,flash="";
+
+function buzz(){try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}}
+
+async function post(cmd,value){
+  try{
+    const r=await fetch("/api/cmd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cmd,value})});
+    if(!r.ok)throw new Error(r.status);
+    st=await r.json();online=true;
+  }catch(e){online=false}
+  draw();
+}
+async function poll(){
+  try{const r=await fetch("/api/current?ts="+Date.now(),{cache:"no-store"});st=await r.json();online=true}
+  catch(e){online=false}
+  draw();
+}
+
+function draw(){
+  $("led").classList.toggle("on",online);
+  if(!online){$("ch").textContent="CH --";$("name").textContent="Host offline - start S1 on the PC";$("fill").style.width="0";$("vnum").textContent="--";return}
+  $("ch").textContent=buf?("CH "+buf+"_"):(st.index?"CH "+String(st.index).padStart(2,"0"):"CH --");
+  let pmsg="";
+  if(st.power_state==="armed")pmsg="POWER OFF? press "+(3-st.power_count)+" more time"+(3-st.power_count>1?"s":"");
+  if(st.power_state==="pending")pmsg="Shutting down in 10s - press POWER to cancel";
+  if(!pmsg&&st.notice)pmsg=st.notice;
+  if(!pmsg&&st.browse)pmsg="Recordings are on the TV: joystick up/down, OK = play";
+  if(!pmsg&&st.rec_error)pmsg=st.rec_error;
+  if(!pmsg&&st.play_error)pmsg=st.play_error;
+  if(!pmsg&&st.play_msg)pmsg=st.play_msg;
+  $("name").textContent=flash||pmsg||st.name||"Pick a channel";
+  const rs=st.rec_secs||0,pad=n=>String(n).padStart(2,"0");
+  $("recbtn").classList.toggle("on",!!st.rec_on);
+  $("recbtn").textContent=st.rec_on?("\u25A0 "+(rs>=3600?Math.floor(rs/3600)+":":"")+pad(Math.floor(rs%3600/60))+":"+pad(rs%60)):"\u25CF REC";
+  $("pwrbtn").classList.toggle("armed",st.power_state==="armed"||st.power_state==="pending");
+  $("tvbtn").classList.toggle("on",!!st.tv);
+  $("tvbtn").textContent=st.tv?"CLOSE TV":"OPEN TV";
+  const ytOpening=!st.yt&&Date.now()-ytAt<12000;
+  $("ytstat").textContent=st.yt?"YouTube is open on the PC":(ytOpening?"Opening YouTube\u2026":"YouTube is closed");
+  $("ytpow").textContent=st.yt?"CLOSE":"OPEN";
+  $("fill").style.width=st.volume+"%";
+  $("vnum").textContent=st.volume;
+  $("mute").classList.toggle("on",!!st.muted);
+  $("mutebtn").classList.toggle("on",!!st.muted);
+  $("bar").classList.toggle("m",!!st.muted);
+  const pf=st.play_file||"",pr=recs.find(r=>r.name===pf);
+  $("rnow").textContent=pf?("\u25B6 On PC: "+(pr?pr.title+" \u00B7 "+pr.when:pf)):(st.play_msg||"Nothing playing on the PC");
+  document.querySelectorAll(".rrow").forEach(el=>el.classList.toggle("active",el.dataset.name===pf));
+  document.querySelectorAll(".row2").forEach((el,i)=>el.classList.toggle("active",i+1===st.index));
+}
+function say(t){flash=t;draw();clearTimeout(flashT);flashT=setTimeout(()=>{flash="";draw()},1400)}
+
+/* hold-to-repeat on the volume rocker */
+let repT=0,repI=0;
+function stopRep(){clearTimeout(repT);clearInterval(repI);document.querySelectorAll(".hold").forEach(b=>b.classList.remove("hold"))}
+document.addEventListener("pointerdown",e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;
+  buzz();post(b.dataset.act);
+  if(b.dataset.rep){b.classList.add("hold");repT=setTimeout(()=>{repI=setInterval(()=>post(b.dataset.act),110)},420)}
+});
+["pointerup","pointercancel","pointerleave","blur"].forEach(ev=>window.addEventListener(ev,stopRep));
+document.addEventListener("contextmenu",e=>e.preventDefault());
+
+/* number pad: type 1-2 digits, tunes after a short pause (or press OK) */
+function commit(){
+  clearTimeout(bufT);
+  const n=parseInt(buf,10);buf="";
+  if(n>=1&&n<=channels.length){post("ch",n)}else{say("No such channel")}
+  draw();
+}
+$("pad").addEventListener("click",e=>{
+  const b=e.target.closest("[data-d]");if(!b)return;
+  buzz();
+  if(buf.length>=2)buf="";
+  buf+=b.dataset.d;draw();
+  clearTimeout(bufT);
+  // tune at once when no other number could follow: 2 digits typed, or e.g. "5" when there are fewer than 50 channels
+  const first=parseInt(buf,10);
+  if(buf.length>=2||(first>=1&&channels.length>0&&first*10>channels.length)){commit();return}
+  bufT=setTimeout(commit,900);
+});
+$("pwrbtn").onclick=async()=>{buzz();const was=st.power_state==="pending";await post("power");if(was&&st.power_state!=="pending")say("Shutdown cancelled")};
+$("recbtn").onclick=()=>{buzz();post("rec");say(st.rec_on?"Stopping recording...":"Starting recording...")};
+$("tvbtn").onclick=()=>{buzz();const was=!!st.tv;post("tv");say(was?"Closing TV screen...":"Opening TV screen...")};
+$("okbtn").onclick=()=>{buzz();if(buf)commit()};
+$("listbtn").onclick=()=>{buzz();$("guide").scrollIntoView({behavior:"smooth"})};
+
+async function loadChannels(){
+  try{channels=await (await fetch("/api/channels")).json()}catch(e){channels=[]}
+  const box=$("list");box.innerHTML="";
+  channels.forEach((c,i)=>{
+    const r=document.createElement("button");r.className="row2";
+    const n=document.createElement("b");n.textContent=String(i+1).padStart(2,"0");
+    const nm=document.createElement("span");nm.textContent=c.name;
+    const q=document.createElement("i");q.textContent=c.note||c.quality||"";
+    r.append(n,nm,q);
+    r.onclick=()=>{buzz();post("ch",i+1);window.scrollTo({top:0,behavior:"smooth"})};
+    const star=document.createElement("button");star.className="star"+(c.default?" on":"");
+    star.textContent=c.default?"\u2605":"\u2606";star.title="Set as default channel";
+    star.onclick=async()=>{buzz();await post("set_default",i+1);await loadChannels();say(c.default?"Default cleared":"Default: "+c.name)};
+    const w=document.createElement("div");w.className="crow";w.append(r,star);
+    box.appendChild(w);
+  });
+  draw();
+}
+
+/* ================= MOUSE + KEYBOARD (controls the PC) ================= */
+/* every event goes through one ordered queue so clicks never overtake moves; moves/scrolls are merged */
+const inq=[];let inBusy=false;
+function sendIn(ev){
+  const l=inq[inq.length-1];
+  if(l&&ev.t==="move"&&l.t==="move"){l.dx+=ev.dx;l.dy+=ev.dy}
+  else if(l&&ev.t==="scroll"&&l.t==="scroll"){l.d+=ev.d}
+  else inq.push(ev);
+  pumpIn();
+}
+async function pumpIn(){
+  if(inBusy||!inq.length)return;inBusy=true;
+  const batch=inq.splice(0,inq.length);
+  try{await fetch("/api/input",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({events:batch})})}catch(e){}
+  inBusy=false;if(inq.length)pumpIn();
+}
+
+/* expanding panels: only one open at a time, closed = hidden */
+let openName=null;
+const PANELS={mouse:["mousepanel","mousebtn"],kb:["kbpanel","kbbtn"],rec:["recpanel","recsbtn"],yt:["ytpanel","ytbtn"]};
+function togglePanel(name){
+  const prevOpen=openName;
+  openName=(openName===name)?null:name;
+  for(const k in PANELS){
+    const [pid,bid]=PANELS[k],on=openName===k;
+    $(pid).classList.toggle("open",on);$(bid).classList.toggle("on",on);$(bid).setAttribute("aria-expanded",on);
+  }
+  if(openName!=="kb")$("nat").blur();
+  if(openName==="rec"){loadRecs();post("browse_open")}else if(prevOpen==="rec")post("browse_close");
+  if(openName)setTimeout(()=>$(PANELS[openName][0]).scrollIntoView({behavior:"smooth",block:"nearest"}),340);
+}
+$("mousebtn").onclick=()=>{buzz();togglePanel("mouse")};
+$("kbbtn").onclick=()=>{buzz();togglePanel("kb")};
+$("rtv").onclick=()=>{buzz();post("browse_open")};
+$("recsbtn").onclick=()=>{buzz();togglePanel("rec")};
+let ytAt=0;
+function ytOpen(){ytAt=Date.now();post("yt_open")}
+$("ytbtn").onclick=()=>{buzz();if(openName!=="yt"&&!st.yt)ytOpen();togglePanel("yt")};
+$("ytpow").onclick=()=>{buzz();if(st.yt){ytAt=0;post("yt_close")}else ytOpen()};
+$("ytstop").onclick=()=>{buzz();ytAt=0;post("yt_close")};
+$("ytback").onclick=()=>{buzz();post("yt_key","back")};
+$("ytrew").onclick=()=>{buzz();post("yt_key","rew")};
+$("ytpp").onclick=()=>{buzz();post("yt_key","playpause")};
+$("ytfwd").onclick=()=>{buzz();post("yt_key","fwd")};
+
+/* touchpad: drag moves the cursor, a quick tap is a left click */
+(function(){
+  const tp=$("tp");let g=null,rx=0,ry=0;
+  tp.addEventListener("pointerdown",e=>{
+    if(g)return;tp.setPointerCapture(e.pointerId);tp.classList.add("active");
+    g={id:e.pointerId,x:e.clientX,y:e.clientY,t:Date.now(),d:0};rx=ry=0;
+  });
+  tp.addEventListener("pointermove",e=>{
+    if(!g||e.pointerId!==g.id)return;
+    const dx=e.clientX-g.x,dy=e.clientY-g.y;g.x=e.clientX;g.y=e.clientY;g.d+=Math.abs(dx)+Math.abs(dy);
+    const gain=1.3+Math.min(2.2,Math.hypot(dx,dy)*0.12);       /* faster swipe = bigger jump */
+    rx+=dx*gain;ry+=dy*gain;
+    const ix=Math.trunc(rx),iy=Math.trunc(ry);rx-=ix;ry-=iy;
+    if(ix||iy)sendIn({t:"move",dx:ix,dy:iy});
+  });
+  const end=e=>{
+    if(!g||e.pointerId!==g.id)return;
+    if(e.type==="pointerup"&&g.d<8&&Date.now()-g.t<300){buzz();sendIn({t:"btn",b:"left",s:"click"})}
+    g=null;tp.classList.remove("active");
+  };
+  ["pointerup","pointercancel"].forEach(ev=>tp.addEventListener(ev,end));
+})();
+
+/* scroll strip: drag up = scroll down (like a phone) */
+(function(){
+  const sc=$("scr");let g=null,r=0;
+  sc.addEventListener("pointerdown",e=>{if(g)return;sc.setPointerCapture(e.pointerId);sc.classList.add("active");g={id:e.pointerId,y:e.clientY};r=0});
+  sc.addEventListener("pointermove",e=>{
+    if(!g||e.pointerId!==g.id)return;
+    r+=(e.clientY-g.y)*4;g.y=e.clientY;
+    const i=Math.trunc(r);r-=i;if(i)sendIn({t:"scroll",d:i});
+  });
+  const end=e=>{if(g&&e.pointerId===g.id){g=null;sc.classList.remove("active")}};
+  ["pointerup","pointercancel"].forEach(ev=>sc.addEventListener(ev,end));
+})();
+
+/* LEFT / MID / RIGHT: finger down = button down, finger up = button up (hold to select/drag text) */
+document.querySelectorAll(".mb").forEach(b=>{
+  let on=false;
+  const up=()=>{if(!on)return;on=false;b.classList.remove("down");sendIn({t:"btn",b:b.dataset.mb,s:"up"})};
+  b.addEventListener("pointerdown",e=>{e.preventDefault();if(on)return;on=true;b.setPointerCapture(e.pointerId);buzz();b.classList.add("down");sendIn({t:"btn",b:b.dataset.mb,s:"down"})});
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>b.addEventListener(ev,up));
+});
+
+/* on-screen keyboard */
+let shift=false,sym=false;
+const ROWS={
+  abc:[ "1234567890".split(""), "qwertyuiop".split(""), "asdfghjkl".split(""), ["SHIFT",..."zxcvbnm".split(""),"BKSP"] ],
+  sym:[ "1234567890".split(""), "~`!@#$%^&*".split(""), "()-_=+[]\\".split(""), ["SHIFT",..."{}|;:'\"".split(""),"BKSP"] ]
+};
+const LABEL={SHIFT:"\u21E7",BKSP:"\u232B",ENTER:"ENTER",TAB:"TAB",SPACE:"space",SYM:"?123",ABC:"ABC",ESC:"ESC",LEFT:"\u25C0",RIGHT:"\u25B6",UP:"\u25B2",DOWN:"\u25BC",DEL:"DEL"};
+function keyBtn(k,cls){
+  const b=document.createElement("button");b.className="kk"+(cls?" "+cls:"");
+  if(LABEL[k]){b.dataset.s=k;b.textContent=LABEL[k]}
+  else{b.dataset.k=k;b.textContent=(shift&&!sym)?k.toUpperCase():k}
+  if(k==="SHIFT"&&shift)b.classList.add("on");
+  return b;
+}
+function renderKb(){
+  const kb=$("kb");kb.innerHTML="";
+  const rows=sym?ROWS.sym:ROWS.abc;
+  rows.forEach((r,i)=>{
+    const d=document.createElement("div");d.className="kr";
+    if(!sym&&i===2)d.style.padding="0 5%";
+    r.forEach(k=>d.appendChild(keyBtn(k,(k==="SHIFT"||k==="BKSP")?"w":"")));
+    kb.appendChild(d);
+  });
+  const bottom=document.createElement("div");bottom.className="kr";
+  if(sym)["ABC","<",">","SPACE","/","?","ENTER"].forEach(k=>bottom.appendChild(keyBtn(k,k==="ABC"?"w fn":k==="SPACE"?"sp":k==="ENTER"?"en":"")));
+  else["SYM","TAB",",","SPACE",".","ENTER"].forEach(k=>bottom.appendChild(keyBtn(k,k==="SYM"?"w fn":k==="TAB"?"w fn":k==="SPACE"?"sp":k==="ENTER"?"en":"")));
+  kb.appendChild(bottom);
+  const nav=document.createElement("div");nav.className="kr";
+  ["ESC","LEFT","UP","DOWN","RIGHT","DEL"].forEach(k=>nav.appendChild(keyBtn(k,"fn")));
+  kb.appendChild(nav);
+}
+const SPECIAL={BKSP:"backspace",ENTER:"enter",TAB:"tab",ESC:"esc",LEFT:"left",RIGHT:"right",UP:"up",DOWN:"down",DEL:"delete"};
+$("kb").addEventListener("click",e=>{
+  const b=e.target.closest(".kk");if(!b)return;buzz();
+  if(b.dataset.k!==undefined){
+    sendIn({t:"text",s:(shift&&!sym)?b.dataset.k.toUpperCase():b.dataset.k});
+    if(shift){shift=false;renderKb()}
+    return;
+  }
+  const k=b.dataset.s;
+  if(k==="SHIFT"){shift=!shift;renderKb()}
+  else if(k==="SYM"){sym=true;shift=false;renderKb()}
+  else if(k==="ABC"){sym=false;renderKb()}
+  else if(k==="SPACE")sendIn({t:"text",s:" "});
+  else if(SPECIAL[k])sendIn({t:"key",k:SPECIAL[k]});
+});
+renderKb();
+
+/* phone's own keyboard -> PC. A hidden sentinel character lets Backspace work on Android too. */
+(function(){
+  const nat=$("nat"),SENT="\u200b";
+  const reset=()=>{nat.value=SENT;try{nat.setSelectionRange(1,1)}catch(e){}};
+  reset();nat.addEventListener("focus",()=>setTimeout(reset,0));
+  nat.addEventListener("input",e=>{
+    if(e.isComposing)return;
+    if(nat.value.length<SENT.length){sendIn({t:"key",k:"backspace"});reset();return}
+    const txt=nat.value.split(SENT).join("");
+    if(txt)sendIn({t:"text",s:txt});
+    reset();
+  });
+  nat.addEventListener("compositionend",e=>{
+    const txt=nat.value.split(SENT).join("");
+    if(txt)sendIn({t:"text",s:txt});
+    reset();
+  });
+  nat.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();sendIn({t:"key",k:"enter"})}});
+})();
+
+/* ================= RECORDINGS ================= */
+async function loadRecs(){
+  const box=$("rlist");
+  try{recs=await (await fetch("/api/recordings?ts="+Date.now(),{cache:"no-store"})).json()}catch(e){recs=[]}
+  box.innerHTML="";
+  if(!recs.length){box.innerHTML='<div class="rempty">No recordings yet.<br>Press &#9679; REC on a channel, press it again to save.</div>';draw();return}
+  recs.forEach(r=>{
+    const row=document.createElement("div");row.className="rrow";row.dataset.name=r.name;
+    const m=document.createElement("button");m.className="rmain";
+    const t=document.createElement("b");t.textContent=r.title;
+    const sm=document.createElement("small");sm.textContent=r.when+"  \u00B7  "+r.mb+" MB"+(r.busy?"  \u00B7  preparing\u2026":"");
+    m.append(t,sm);
+    m.onclick=()=>playOnPc(r);
+    const ph=document.createElement("button");ph.className="rph";ph.textContent="\uD83D\uDCF1";ph.title="Watch on this phone";
+    ph.onclick=()=>{buzz();watchHere(r)};
+    row.append(m,ph);box.appendChild(row);
+  });
+  draw();
+}
+async function playOnPc(r){
+  buzz();
+  if(!st.tv){say("Opening TV screen...");await post("tv")}
+  await post("rec_play",r.name);
+  say(st.play_msg||"Playing on the PC...");
+}
+function watchHere(r){
+  $("pvt").textContent=r.title+" \u00B7 "+r.when;
+  const v=$("pvv");v.src="/api/rec/file?name="+encodeURIComponent(r.name);$("pv").classList.add("show");v.play().catch(()=>{});
+}
+$("pvx").onclick=()=>{const v=$("pvv");v.pause();v.removeAttribute("src");v.load();$("pv").classList.remove("show")};
+$("rref").onclick=()=>{buzz();loadRecs()};
+$("rfold").onclick=()=>{buzz();post("rec_folder");say("Opening folder on the PC...")};
+$("rb60").onclick=()=>{buzz();post("rec_seek",-60)};
+$("rb10").onclick=()=>{buzz();post("rec_seek",-10)};
+$("rf10").onclick=()=>{buzz();post("rec_seek",10)};
+$("rf60").onclick=()=>{buzz();post("rec_seek",60)};
+$("rpp").onclick=()=>{buzz();post("rec_toggle")};
+$("rstop").onclick=()=>{buzz();post("rec_stop");say("Back to live TV")};
+
+/* ================= JOYSTICK ================= */
+/* push = arrow (left/right = back/forward 10 s while a recording plays, up/down = volume), tap = OK / play-pause.
+   Hold to repeat. When no recording is playing it presses the arrow keys on the PC. */
+(function(){
+  const joy=$("joy"),knob=$("knob"),R=34,TH=16;let g=null,dir="",rt=0,ri=0,moved=0;
+  const stop=()=>{clearTimeout(rt);clearInterval(ri)};
+  function fire(d){buzz();post("joy",d)}
+  function setDir(d){
+    if(d===dir)return;dir=d;stop();if(!d)return;
+    fire(d);rt=setTimeout(()=>{ri=setInterval(()=>fire(d),140)},380);
+  }
+  joy.addEventListener("pointerdown",e=>{if(g)return;joy.setPointerCapture(e.pointerId);g={id:e.pointerId,t:Date.now()};moved=0;knob.classList.add("drag");mv(e)});
+  function mv(e){
+    const b=joy.getBoundingClientRect();let x=e.clientX-(b.left+b.width/2),y=e.clientY-(b.top+b.height/2);
+    const m=Math.hypot(x,y);if(m>R){x*=R/m;y*=R/m}
+    moved=Math.max(moved,m);knob.style.transform="translate("+x+"px,"+y+"px)";
+    setDir(m<TH?"":(Math.abs(x)>Math.abs(y)?(x<0?"left":"right"):(y<0?"up":"down")));
+  }
+  joy.addEventListener("pointermove",e=>{if(g&&e.pointerId===g.id)mv(e)});
+  const end=e=>{
+    if(!g||e.pointerId!==g.id)return;
+    const tap=e.type==="pointerup"&&moved<TH&&Date.now()-g.t<350;
+    g=null;stop();dir="";knob.classList.remove("drag");knob.style.transform="";
+    if(tap)fire("ok");
+  };
+  ["pointerup","pointercancel"].forEach(ev=>joy.addEventListener(ev,end));
+})();
+
+loadChannels();poll();setInterval(poll,1500);
+</script>
+</body>
+</html>
