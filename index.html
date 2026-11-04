@@ -49,15 +49,17 @@ function playChannel(name,url){
      failChannel((c===401||c===403||c===451)?'This channel is blocked in your region (HTTP '+c+'). Pick another channel.':'This channel could not be loaded. Pick another channel.');
    });
    hls.loadSource(url);hls.attachMedia(v);
-   hls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().then(()=>gate.style.display='none').catch(()=>showGate('Autoplay was blocked. Press Play on the video.')));
+   hls.on(Hls.Events.MANIFEST_PARSED,autoStart);
  }else if(v.canPlayType('application/vnd.apple.mpegurl')){
-   v.src=url;v.play().then(()=>gate.style.display='none').catch(()=>showGate('Autoplay was blocked. Press Play on the video.'));
+   v.src=url;autoStart();
  }else showGate('This browser does not support this stream format.');
 }
 async function loadDefault(){try{let r=await fetch('/api/default?ts='+Date.now(),{cache:'no-store'}),d=await r.json();if(d.url)playChannel(d.name,d.url);else msg.textContent='Scan the QR code with your phone to pick a channel.'}catch(e){msg.textContent='Loading…'}}
 let lastVol=null,lastMute=null,osdT=0;
 function osd(t){let o=document.getElementById('osd');o.textContent=t;o.style.opacity=1;clearTimeout(osdT);osdT=setTimeout(()=>o.style.opacity=0,1600)}
-function applyAudio(d){if(typeof d.volume!=='number')return;v.volume=Math.max(0,Math.min(1,d.volume/100));v.muted=!!d.muted;
+let forcedMute=false;window.s1Unmute=function(){forcedMute=false;v.muted=!!lastMute;if(window.s1ShowHint)s1ShowHint(false);if(!v.paused)return;v.play().catch(()=>{})};
+function autoStart(){return v.play().then(()=>{gate.style.display='none'}).catch(()=>{v.muted=true;forcedMute=true;return v.play().then(()=>{gate.style.display='none';if(window.s1ShowHint)s1ShowHint(true)}).catch(()=>showGate('Waiting for the browser to allow playback...'))})}
+function applyAudio(d){if(typeof d.volume!=='number')return;v.volume=Math.max(0,Math.min(1,d.volume/100));v.muted=!!d.muted||forcedMute;
 if(lastVol!==null&&(d.volume!==lastVol||!!d.muted!==lastMute))osd(d.muted?'\uD83D\uDD07 Muted':'\uD83D\uDD0A '+d.volume);lastVol=d.volume;lastMute=!!d.muted}
 function applyRec(d){let b=document.getElementById('recbadge'),s=document.getElementById('recsaved'),p=n=>String(n).padStart(2,'0');
 if(d.rec_on){let t=d.rec_secs||0;document.getElementById('rectime').textContent='REC '+(t>=3600?Math.floor(t/3600)+':':'')+p(Math.floor(t%3600/60))+':'+p(t%60);document.getElementById('recname').textContent=d.rec_name||'';b.style.display='flex';s.style.display='none'}
