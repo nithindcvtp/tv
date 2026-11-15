@@ -11,13 +11,13 @@
  },
  {
   "name": "Asianet Movies HD",
-  "url": "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:asianetmovies.smil/chunklist_b1928000.m3u8",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=459",
   "quality": "720p"
  },
  {
-  "name": "Asianet Middle East",
-  "url": "https://mumt03.tangotv.in/Dsly5z3HASIANETMIDDLEEAST/index.m3u8",
-  "quality": "576p"
+  "name": "Asianet Suvarna News",
+  "url": "https://asianetnews.vgcdn.net/vglive-sk-335835/playlist.m3u8",
+  "quality": "1080p"
  },
  {
   "name": "Manorama News",
@@ -115,13 +115,38 @@
   "quality": "576p"
  },
  {
-  "name": "InWonder",
-  "url": "https://amg00861-terninternation-inwonder-samsungau-1k63k.amagi.tv/playlist/amg00861-terninternation-inwonder-samsungau/playlist.m3u8",
+  "name": "National Geographic",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=1335",
   "quality": "1080p"
  },
  {
-  "name": "Wonder",
-  "url": "https://lds-wonder-samsungau.amagi.tv/playlist.m3u8",
-  "quality": "720p"
+  "name": "National Geographic Wild",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=1332",
+  "quality": "HD 1080p"
+ },
+ {
+  "name": "B4UMOVIES",
+  "url": "https://streams.tangotv.in/B4UMOVIES/ORIGIN/index.m3u8",
+  "quality": "576"
+ },
+ {
+  "name": "DDNational",
+  "url": "https://mumbai-edge.smartplaytv.in/DDNational/index.m3u8",
+  "quality": "1080"
+ },
+ {
+  "name": "DD News HD",
+  "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/0811cd8c37ca4c409d5385a6cd2fa18b/index.m3u8",
+  "quality": "1080"
+ },
+ {
+  "name": "Disney Channel HD East",
+  "url": "http://4.30.180.36:8420/disneychannel/index.m3u8?token=test",
+  "quality": "720"
+ },
+ {
+  "name": "Discovery HD Malayalam",
+  "url": "https://jjtvxweb.pages.dev/pind.html?id=3431",
+  "quality": "1080p"
  }
 ]
