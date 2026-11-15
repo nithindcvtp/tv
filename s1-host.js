@@ -131,8 +131,11 @@
     conn.on('data', function (m) {
       if (!m || typeof m !== 'object') return;
       if (m.t === 'hello') {
-        Promise.race([ipReady, new Promise(function (r) { setTimeout(r, 3500); })]).then(function () {
-          if (tvIp && m.ip && tvIp !== m.ip) { conn.send({ t: 'reject', reason: 'network' }); setTimeout(function () { try { conn.close(); } catch (e) {} }, 600); return; }
+        /* The private 8-character code from the QR is the real "key". The old public-IP comparison wrongly
+           rejected phones on the same Wi-Fi (CGNAT / IPv6 / NAT64 / different outgoing IPs), so it is now only a
+           log hint and never blocks the connection. */
+        Promise.resolve().then(function () {
+          if (tvIp && m.ip && tvIp !== m.ip && window.console) console.log('S1: phone public IP differs from TV (' + m.ip + ' vs ' + tvIp + ') - allowed');
           authed = true; if (conns.indexOf(conn) < 0) conns.push(conn);
           conn.send({ t: 'welcome' }); say('\uD83D\uDCF1 Remote connected'); paintStatus();
         });
